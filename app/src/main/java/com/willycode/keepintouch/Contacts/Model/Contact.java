@@ -6,8 +6,23 @@ package com.willycode.keepintouch.Contacts.Model;
 public class Contact {
     private String Name;
 
-    public Contact(String name) {
+    public Contact() {
+
+    }
+
+    public String getPhoneNumber() {
+        return PhoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        PhoneNumber = phoneNumber;
+    }
+
+    private String PhoneNumber;
+
+    public Contact(String name, String phoneNumber) {
         Name = name;
+        this.PhoneNumber = phoneNumber;
     }
 
     public String getName() {

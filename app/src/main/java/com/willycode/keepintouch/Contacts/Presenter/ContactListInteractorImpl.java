@@ -1,9 +1,13 @@
 package com.willycode.keepintouch.Contacts.Presenter;
 
+import android.content.Context;
 import android.os.Handler;
 
+import com.willycode.keepintouch.Contacts.Model.Contact;
+import com.willycode.keepintouch.Contacts.Model.ContactContract;
 import com.willycode.keepintouch.Contacts.Utils.OnFinishedListener;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,12 +17,8 @@ import java.util.List;
 public class ContactListInteractorImpl implements  ContactListInteractor {
 
     @Override
-    public void loadContacts(final OnFinishedListener listener) {
-        new Handler().postDelayed(new Runnable() {
-            @Override public void run() {
-                listener.onFinished(createArrayList());
-            }
-        }, 2000);
+    public void loadContacts(final OnFinishedListener listener, final Context c) {
+        listener.onFinished(createArrayList(c));
     }
 
     @Override
@@ -26,18 +26,13 @@ public class ContactListInteractorImpl implements  ContactListInteractor {
 
     }
 
-    private List<String> createArrayList() {
-        return Arrays.asList(
-                "Contact 1",
-                "Contact 2",
-                "Contact 3",
-                "Contact 4",
-                "Contact 5",
-                "Contact 6",
-                "Contact 7",
-                "Contact 8",
-                "Contact 9",
-                "Contact 10"
-        );
+    private List<String> createArrayList(Context c) {
+        ContactContract cc = new ContactContract(c);
+        List<Contact> l = cc.getAllContacts();
+        List<String> ret = new ArrayList<String>();
+        for (int i = 0; i < l.size(); i++) {
+            ret.add(l.get(i).getName());
+        }
+        return ret;
     }
 }
