@@ -25,12 +25,15 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.appinvite.AppInviteInvitation;
 import com.google.android.gms.appinvite.AppInviteInvitationResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.willycode.keepintouch.Contacts.KitApplication;
 import com.willycode.keepintouch.Contacts.Model.Contact;
 import com.willycode.keepintouch.Contacts.Model.ContactContract;
 import com.willycode.keepintouch.Contacts.Presenter.ContactPresenter;
@@ -85,6 +88,16 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
                             @Override
                             public void onResult(AppInviteInvitationResult result) {
                                 Log.d(TAG, "getInvitation:onResult:" + result.getStatus());
+                                if(result.getStatus().isSuccess())
+                                {
+                                    Tracker t = ((KitApplication) getApplication()).tracker();
+                                    // Build and send an Event.
+                                    t.send(new HitBuilders.EventBuilder()
+                                            .setCategory(getString(R.string.category_id))
+                                            .setAction(getString(R.string.accepted))
+                                                    //.setLabel(getString(labelId))
+                                            .build());
+                                }
                                 // Because autoLaunchDeepLink = true we don't have to do anything
                                 // here, but we could set that to false and manually choose
                                 // an Activity to launch to handle the deep link here.
@@ -96,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
             DialogFragment newFragment = new FrequenceFragment();
             newFragment.show(getSupportFragmentManager(), "frequences");
         }
-
     }
 
     @Override
@@ -182,6 +194,14 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
                         // (one for each contact select by the user). You can use these for analytics
                         // as the ID will be consistent on the sending and receiving devices.
                         String[] ids = AppInviteInvitation.getInvitationIds(resultCode, data);
+                        // Get tracker.
+                        Tracker t = ((KitApplication) getApplication()).tracker();
+                        // Build and send an Event.
+                        t.send(new HitBuilders.EventBuilder()
+                                .setCategory(getString(R.string.category_id))
+                                .setAction(getString(R.string.sent))
+                                //.setLabel(getString(labelId))
+                                .build());
                         Log.d(TAG, getString(R.string.sent_invitations_fmt, ids.length));
                         break;
                 }
