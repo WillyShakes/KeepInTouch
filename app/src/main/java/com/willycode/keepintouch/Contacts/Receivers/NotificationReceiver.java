@@ -26,7 +26,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             String notification_msg = context.getString(R.string.notification_msg);
             NotificationCompat.Builder mBuilder =
                     new NotificationCompat.Builder(context)
-                            .setSmallIcon(R.drawable.cast_ic_notification_0)
+                            .setSmallIcon(R.drawable.ic_notify)
                             .setContentTitle(title)
                             .setContentText(notification_msg);
             // Because clicking the notification opens a new ("special") activity, there's

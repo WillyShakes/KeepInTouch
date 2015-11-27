@@ -1,7 +1,11 @@
 package com.willycode.keepintouch.Contacts.View;
 
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.app.Dialog;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
@@ -30,7 +34,11 @@ import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.appinvite.AppInviteInvitation;
 import com.google.android.gms.appinvite.AppInviteInvitationResult;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.willycode.keepintouch.Contacts.KitApplication;
@@ -40,15 +48,20 @@ import com.willycode.keepintouch.Contacts.Presenter.ContactPresenter;
 import com.willycode.keepintouch.Contacts.Presenter.ContactPresenterImpl;
 import com.willycode.keepintouch.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements ContactListView, AdapterView.OnItemClickListener, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends AppCompatActivity implements ContactListView, AdapterView.OnItemClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
+
+
     private ListView listView;
     private ProgressBar progressBar;
     private ContactPresenter presenter;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_INVITE = 0;
     private static final int RESULT_PICK_CONTACT = 1;
+    private static final int RESOLVE_CONNECTION_REQUEST_CODE = 2;
+    private static final int RC_SIGN_IN = 3;
     private GoogleApiClient mGoogleApiClient;
     public static final String MyPREFERENCES = "MyPrefs" ;
     public static final String Frequence = "frequence";
@@ -72,10 +85,21 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
                 startActivityForResult(contactPickerIntent, RESULT_PICK_CONTACT);
             }
         });
+
+        // Configure sign-in to request the user's ID, email address, and basic
+        // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+
         // Create an auto-managed GoogleApiClient with acccess to App Invites.
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(AppInvite.API)
                 .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
                 .build();
 
         // Check for App Invite invitations and launch deep-link activity if possible.
@@ -124,6 +148,18 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
         return true;
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -131,16 +167,21 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_invite) {
-            Intent intent = new AppInviteInvitation.IntentBuilder(getString(R.string.invitation_title))
-                    .setMessage(getString(R.string.invitation_message))
-                    .setDeepLink(Uri.parse(getString(R.string.invitation_deep_link)))
-                    .setCustomImage(Uri.parse(getString(R.string.invitation_custom_image)))
-                    .setCallToActionText(getString(R.string.invitation_cta))
-                    .build();
-            startActivityForResult(intent, REQUEST_INVITE);
+            int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
+            // Showing status
+            if(status==ConnectionResult.SUCCESS) {
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                    Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                }
+            }
+            else{
+                int requestCode = 10;
+                Dialog dialog = GooglePlayServicesUtil.getErrorDialog(status, this, requestCode);
+                dialog.show();
+            }
             return true;
         }
         if (id == R.id.action_set_frequence) {
@@ -155,7 +196,18 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        presenter.onItemClicked(position);
+        ContactContract cc = new ContactContract(MainActivity.this);
+        List<Contact> l = cc.getAllContacts();
+        Contact c = l.get(position);
+        String num = c.getPhoneNumber();
+        Intent phoneIntent = new Intent(Intent.ACTION_CALL);
+        phoneIntent.setData(Uri.parse("tel:" + num));
+        try{
+            startActivity(phoneIntent);
+        }
+        catch (Exception ex){
+            showMessage("Phone call failed !");
+        }
     }
 
     @Override
@@ -173,11 +225,6 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
         listView.setVisibility(View.VISIBLE);
     }
 
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(TAG, "onConnectionFailed:" + connectionResult);
-        showMessage(getString(R.string.google_play_services_error));
-    }
     // [START on_activity_result]
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -185,6 +232,31 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
         Log.d(TAG, "onActivityResult: requestCode=" + requestCode + ", resultCode=" + resultCode);
             if (resultCode == RESULT_OK) {
                 switch (requestCode) {
+                    // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+                    case RC_SIGN_IN:
+                        GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+                        if (result.isSuccess()) {
+                            Account[] accounts = AccountManager.get(this).getAccounts();
+                            Intent intent = new AppInviteInvitation.IntentBuilder(getString(R.string.invitation_title))
+                                    .setMessage(getString(R.string.invitation_message))
+                                    .setDeepLink(Uri.parse(getString(R.string.invitation_deep_link)))
+                                    .setCustomImage(Uri.parse(getString(R.string.invitation_custom_image)))
+                                    .setCallToActionText(getString(R.string.invitation_cta))
+                                    .setGoogleAnalyticsTrackingId("UA-70191148-1")
+                                    .setAccount(accounts[0])
+                                    .build();
+                            startActivityForResult(intent, REQUEST_INVITE);
+                        } else {
+                            // Sending failed or it was canceled, show failure message to the user
+                            showMessage(getString(R.string.google_play_services_error));
+                        }
+
+                    case RESOLVE_CONNECTION_REQUEST_CODE:
+                        if (!mGoogleApiClient.isConnecting() &&
+                                !mGoogleApiClient.isConnected()) {
+                            mGoogleApiClient.connect();
+                        }
+                        break;
                     case RESULT_PICK_CONTACT:
                         contactPicked(data);
                         break;
@@ -244,6 +316,31 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
             presenter.onResume();
         } catch (Exception e) {
             showMessage(e.getMessage());
+        }
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        // Attempt to reconnect
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        if (connectionResult.hasResolution()) {
+            try {
+                connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
+            } catch (IntentSender.SendIntentException e) {
+                // Unable to resolve, message user appropriately
+                showMessage(getString(R.string.google_play_services_error));
+            }
+        } else {
+            GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), this, 0).show();
         }
     }
 }

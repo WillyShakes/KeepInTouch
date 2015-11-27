@@ -1,26 +1,26 @@
 <resources>
-    <string name="app_name">KeepInTouch</string>
+    <string name="app_name">RememberToCall</string>
     <string name="action_settings">Settings</string>
     <string name="action_deep_link">
         com.google.android.gms.samples.appinvite.DEEP_LINK_ACTION
     </string>
 
-    <string name="action_invite">Send invitations!</string>
+    <string name="action_invite">Invite your friends!</string>
     <string name="referrer_hint">Deep link not provided</string>
     <string name="deep_link_default">Deep link not set</string>
     <string name="invitation_id_default">Invitation ID not set</string>
     <string name="invite_friends">Invite Friends</string>
-    <string name="action_set_frequence">Set touch frequence</string>
+    <string name="action_set_frequence">Set Call frequence</string>
     <string name="choose_frequence">Choose a frequence</string>
     <string name="daily">Daily</string>
     <string name="weekly">Weekly</string>
     <string name="monthly">Monthly</string>
     <string name="yearly">Yearly</string>
     <string name="global_tracker">Global tracker</string>
-    <string name="notification_msg">Keep in touch with your love ones today</string>
+    <string name="notification_msg">Call your love ones now!</string>
 
-    <string name="invitation_title">Keep in Touch Invite</string>
-    <string name="invitation_message">This app is exceptional, give it a try to always keep in touch with your love ones!</string>
+    <string name="invitation_title">Remember To Call - Invite</string>
+    <string name="invitation_message">Never forget to call your love ones!</string>
     <string name="invitation_deep_link">http://example.com/offer/five_dollar_offer</string>
     <string name="invitation_custom_image">https://lh3.googleusercontent.com/nuGx9mygxfh4ewkYsxR85_PxApOScHeD7Nve2bBwJB1_k7Rq1ZcsirZcKuCdCoVLC1J6GLmOun89yeyJJ4HySlDJtevG6K-293P1y3S8utlp-Ohflh124wAUkweR7BAP57vsdbiEoj_9JoSMJep4NtPjS06_AAhGqkxuXfUDpW2RFOUKzPBHTLPhvfkCKg6K5tAqh0U4EqzHaA4a7-XIvSCHXVjwqwSJ3NEs8Aoi3Kxr6myhqZO0jhwg6_Rn_aJ69bUaksLpgw4xpQbZsZU9gbXRH8Y7wrPlwDjizdNF0g2jabH4NkGUj6wOJzfaUFoeOkV0t2RNkLg8JRAKeAbKXSG4xA3JCUTqM7oq4tgwlV55PP8KxSqtweRhShuIBg9nRGtLeOxt061ExJt3ilXUxYwanllYz3WBKXrsYOuhBikmVYV36c3OfDx7dMzT-vsqcY70ME65YtfotsOOXtGiGyHSDdtzq6x2IIiUdLKLHF5kLdZDw_qmAb3nYZ1Mt5v7flOWbCM5xdzYmmV0dIqc-espiB6-JNAU2od_vonJRmw=w1024-h500-no</string>
     <string name="invitation_cta">Install!</string>

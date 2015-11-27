@@ -50,7 +50,6 @@ import com.willycode.keepintouch.R;
         super.onCreate();
         analytics = GoogleAnalytics.getInstance(this);
 
-        // TODO: Replace the tracker-id with your app one from https://www.google.com/analytics/web/
         tracker = analytics.newTracker("UA-70191148-1");
 
         // Provide unhandled exceptions reports. Do that first after creating the tracker
