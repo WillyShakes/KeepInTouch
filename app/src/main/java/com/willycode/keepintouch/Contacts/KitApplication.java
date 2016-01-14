@@ -4,11 +4,16 @@ package com.willycode.keepintouch.Contacts;
  * Created by Manuel ELO'O on 21/11/2015.
  */
 
+import android.app.AlarmManager;
 import android.app.Application;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
-import com.willycode.keepintouch.R;
+import com.willycode.keepintouch.BuildConfig;
+import com.willycode.keepintouch.Contacts.Receivers.AlarmReceiver;
 
 /**
      * This is a subclass of {@link Application} used to provide shared objects for this app, such as
@@ -61,5 +66,32 @@ import com.willycode.keepintouch.R;
 
         // Enable automatic activity tracking for your app
         tracker.enableAutoActivityTracking(true);
+        scheduleAlarm();
+    }
+
+    // Setup a recurring alarm every half hour
+    public void scheduleAlarm() {
+        // Construct an intent that will execute the AlarmReceiver
+        Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
+        // Create a PendingIntent to be triggered when the alarm goes off
+        final PendingIntent pIntent = PendingIntent.getBroadcast(this, AlarmReceiver.REQUEST_CODE,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        // Setup periodic alarm every 5 seconds
+        long firstMillis = System.currentTimeMillis(); // alarm is set right away
+        AlarmManager alarm = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        // First parameter is the type: ELAPSED_REALTIME, ELAPSED_REALTIME_WAKEUP, RTC_WAKEUP
+        // Interval can be INTERVAL_FIFTEEN_MINUTES, INTERVAL_HALF_HOUR, INTERVAL_HOUR, INTERVAL_DAY
+
+        long interval;
+        if(BuildConfig.DEBUG)
+        {
+            interval = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
+        }
+        else
+        {
+            interval = AlarmManager.INTERVAL_DAY;
+        }
+        alarm.setInexactRepeating(AlarmManager.RTC_WAKEUP, firstMillis,
+                interval, pIntent);
     }
 }

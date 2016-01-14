@@ -17,18 +17,20 @@ public class ContactDbHelper extends SQLiteOpenHelper {
     /* Inner class that defines the table contents */
     public static abstract class ContactEntry implements BaseColumns {
         public static final String TABLE_NAME = "contacts";
-        public static final String COLUMN_NAME_ENTRY_ID = "contactid";
-        public static final String COLUMN_NAME_TITLE = "name";
-        public static final String COLUMN_NAME_SUBTITLE = "number";
+        public static final String COLUMN_NAME = "name";
+        public static final String COLUMN_NUMBER = "number";
+        public static final String COLUMN_LAST_CALL_TIME = "last_call_time";
+        public static final String COLUMN_PERIOD = "period";
     }
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE " + ContactEntry.TABLE_NAME + " (" +
                     ContactEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT ," +
-                    ContactEntry.COLUMN_NAME_ENTRY_ID + TEXT_TYPE + COMMA_SEP +
-                    ContactEntry.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
-                    ContactEntry.COLUMN_NAME_SUBTITLE + TEXT_TYPE +
+                    ContactEntry.COLUMN_NAME + TEXT_TYPE + COMMA_SEP +
+                    ContactEntry.COLUMN_NUMBER + TEXT_TYPE + COMMA_SEP +
+                    ContactEntry.COLUMN_LAST_CALL_TIME + TEXT_TYPE + COMMA_SEP +
+                    ContactEntry.COLUMN_PERIOD + TEXT_TYPE +
                     " )";
 
     private static final String SQL_DELETE_ENTRIES =

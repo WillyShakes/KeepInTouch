@@ -2,6 +2,7 @@ package com.willycode.keepintouch.Contacts.Presenter;
 
 import android.content.Context;
 
+import com.willycode.keepintouch.Contacts.Model.Contact;
 import com.willycode.keepintouch.Contacts.Utils.OnFinishedListener;
 import com.willycode.keepintouch.Contacts.View.ContactListView;
 
@@ -30,7 +31,7 @@ public class ContactPresenterImpl implements ContactPresenter,OnFinishedListener
         contactListView.showMessage(String.format("Position %d clicked", position + 1));
     }
 
-    @Override public void onFinished(List<String> contacts) {
+    @Override public void onFinished(List<Contact> contacts) {
         contactListView.setContacts(contacts);
         contactListView.hideProgress();
     }

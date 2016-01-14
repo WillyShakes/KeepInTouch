@@ -17,7 +17,7 @@
     <string name="monthly">Monthly</string>
     <string name="yearly">Yearly</string>
     <string name="global_tracker">Global tracker</string>
-    <string name="notification_msg">Call your love ones now!</string>
+    <string name="notification_msg">Today remember to call</string>
 
     <string name="invitation_title">Remember To Call - Invite</string>
     <string name="invitation_message">Never forget to call your love ones!</string>
@@ -36,4 +36,5 @@
     <string name="sent">Sent</string>
     <string name="accepted">Accepted</string>
     <string name="category_id">Invitation</string>
+    <string name="delete_item">Delete contact</string>
 </resources>

@@ -4,30 +4,30 @@ package com.willycode.keepintouch.Contacts.View;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-
 import android.support.v4.app.DialogFragment;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
@@ -41,21 +41,24 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.willycode.keepintouch.BuildConfig;
 import com.willycode.keepintouch.Contacts.KitApplication;
 import com.willycode.keepintouch.Contacts.Model.Contact;
 import com.willycode.keepintouch.Contacts.Model.ContactContract;
+import com.willycode.keepintouch.Contacts.Model.ContactDbHelper;
 import com.willycode.keepintouch.Contacts.Presenter.ContactPresenter;
 import com.willycode.keepintouch.Contacts.Presenter.ContactPresenterImpl;
+import com.willycode.keepintouch.Contacts.Utils.SwipeDismissListViewTouchListener;
 import com.willycode.keepintouch.R;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ContactListView, AdapterView.OnItemClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
 
 
     private ListView listView;
-    private ProgressBar progressBar;
     private ContactPresenter presenter;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_INVITE = 0;
@@ -66,15 +69,30 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
     public static final String MyPREFERENCES = "MyPrefs" ;
     public static final String Frequence = "frequence";
     public static final String AlarmSet = "alarm_set";
+    private ArrayAdapter<String> mAdapter;
+    private SwipeRefreshLayout mySwipeRefreshLayout;
+    private List<Contact> myContacts;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if(BuildConfig.DEBUG) {
+            Intent i = new Intent("com.willycode.keepintouch.CALL_ACTION");
+            i.putExtra(ContactDbHelper.ContactEntry.COLUMN_NAME, "Your Mom");
+            sendBroadcast(i);
+        }
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         listView = (ListView) findViewById(R.id.list);
         listView.setOnItemClickListener(this);
-        progressBar = (ProgressBar) findViewById(R.id.progress);
+        mySwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.layout);
+        mySwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                nothing();
+            }
+        });
         presenter = new ContactPresenterImpl(this,this);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -133,6 +151,10 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
             DialogFragment newFragment = new FrequenceFragment();
             newFragment.show(getSupportFragmentManager(), "frequences");
         }
+    }
+
+    private void nothing() {
+        mySwipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
@@ -211,17 +233,72 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
     }
 
     @Override
-    public void setContacts(List<String> contacts) {
-        listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, contacts));
+    public void setContacts(final List<Contact> contacts) {
+        myContacts = contacts;
+        List<String> items = new ArrayList<>();
+        for(Contact c :contacts){
+            items.add(c.getName());
+        }
+        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
+        listView.setAdapter(mAdapter);
+        // Create a ListView-specific touch listener. ListViews are given special treatment because
+        // by default they handle touches for their list items... i.e. they're in charge of drawing
+        // the pressed state (the list selector), handling list item clicks, etc.
+        SwipeDismissListViewTouchListener touchListener =
+                new SwipeDismissListViewTouchListener(
+                        listView,
+                        new SwipeDismissListViewTouchListener.DismissCallbacks() {
+                            @Override
+                            public boolean canDismiss(int position) {
+                                return true;
+                            }
+
+                            @Override
+                            public void onDismiss(ListView listView, int[] reverseSortedPositions) {
+                                for (int position : reverseSortedPositions) {
+                                    deleteItem(contacts.get(position));
+                                }
+                                mAdapter.notifyDataSetChanged();
+                            }
+                        });
+        listView.setOnTouchListener(touchListener);
+        // Setting this scroll listener is required to ensure that during ListView scrolling,
+        // we don't look for swipes.
+        listView.setOnScrollListener(touchListener.makeScrollListener());
+    }
+
+    private void deleteItem(final Contact contact) {
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        //Yes button clicked
+                        ContactContract cc = new ContactContract(getApplicationContext());
+                        cc.deleteContact(contact);
+                        presenter.onResume();
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        //No button clicked
+                        break;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(getString(R.string.delete_item)+" "+contact.getName()+" ?").setPositiveButton(getString(android.R.string.ok), dialogClickListener)
+                .setNegativeButton(getString(android.R.string.no), dialogClickListener).show();
+
     }
 
     @Override public void showProgress() {
-        progressBar.setVisibility(View.VISIBLE);
+        mySwipeRefreshLayout.setRefreshing(true);
         listView.setVisibility(View.INVISIBLE);
     }
 
     @Override public void hideProgress() {
-        progressBar.setVisibility(View.INVISIBLE);
+        mySwipeRefreshLayout.setRefreshing(false);
         listView.setVisibility(View.VISIBLE);
     }
 
@@ -279,8 +356,10 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
                 }
 
             } else {
-                // Sending failed or it was canceled, show failure message to the user
-                showMessage(getString(R.string.send_failed));
+                if(requestCode == REQUEST_INVITE) {
+                    // Sending failed or it was canceled, show failure message to the user
+                    showMessage(getString(R.string.send_failed));
+                }
             }
     }
     // [END on_activity_result]
@@ -311,6 +390,28 @@ public class MainActivity extends AppCompatActivity implements ContactListView, 
             phoneNo = cursor.getString(phoneIndex);
             name = cursor.getString(nameIndex);
             Contact c = new Contact(name,phoneNo);
+            SharedPreferences prefs = this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+            int p = Integer.valueOf(prefs.getString(Frequence, null));
+            String period = null;
+            switch (p){
+                case 0:
+                    period = Contact.DAILY;
+                    break;
+                case 1:
+                    //ogni 7 giorno
+                    period = Contact.WEEKLY;
+                    break;
+                case 2:
+                    //ogni 4 settimane
+                    period = Contact.MONTHLY;
+                    break;
+                case 3:
+                    //ogni 365 giorni
+                    period = Contact.YEARLY;
+                    break;
+            }
+            c.setPeriod(period);
+            c.setLastCallTime(new Date());
             ContactContract cc = new ContactContract(this);
             cc.addContact(c);
             presenter.onResume();

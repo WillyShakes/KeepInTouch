@@ -2,6 +2,7 @@ package com.willycode.keepintouch.Contacts.Presenter;
 
 import android.content.Context;
 import android.os.Handler;
+import android.provider.ContactsContract;
 
 import com.willycode.keepintouch.Contacts.Model.Contact;
 import com.willycode.keepintouch.Contacts.Model.ContactContract;
@@ -26,13 +27,9 @@ public class ContactListInteractorImpl implements  ContactListInteractor {
 
     }
 
-    private List<String> createArrayList(Context c) {
+    private List<Contact> createArrayList(Context c) {
         ContactContract cc = new ContactContract(c);
         List<Contact> l = cc.getAllContacts();
-        List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < l.size(); i++) {
-            ret.add(l.get(i).getName());
-        }
-        return ret;
+        return l;
     }
 }
